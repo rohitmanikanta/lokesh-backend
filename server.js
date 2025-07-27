@@ -1,16 +1,21 @@
-const express = require("express");
+const express = require("express"); 
 const multer = require("multer");
 const cors = require("cors");
 const fs = require("fs");
 const { PNG } = require("pngjs");
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 const upload = multer({ dest: "uploads/" });
 
+// ✅ Home route for Render root URL
+app.get("/", (req, res) => {
+  res.send("✅ Lokesh Backend is live and working!");
+});
 
+// Steganography Encode
 function encodeMessage(buffer, message) {
   const png = PNG.sync.read(buffer);
   const data = png.data;
@@ -20,7 +25,7 @@ function encodeMessage(buffer, message) {
     messageBits += message.charCodeAt(i).toString(2).padStart(8, '0');
   }
 
-  messageBits += '00000000'; 
+  messageBits += '00000000'; // Null terminator
 
   for (let i = 0; i < messageBits.length; i++) {
     data[i * 4] = (data[i * 4] & 0xFE) | parseInt(messageBits[i]); 
@@ -29,7 +34,7 @@ function encodeMessage(buffer, message) {
   return PNG.sync.write(png);
 }
 
-
+// Steganography Decode
 function decodeMessage(buffer) {
   const png = PNG.sync.read(buffer);
   const data = png.data;
@@ -49,7 +54,7 @@ function decodeMessage(buffer) {
   return chars;
 }
 
-
+// Encode Route
 app.post("/api/encode", upload.single("image"), (req, res) => {
   const image = req.file;
   const message = req.body.message;
@@ -67,7 +72,7 @@ app.post("/api/encode", upload.single("image"), (req, res) => {
   res.send(encoded);
 });
 
-
+// Decode Route
 app.post("/api/decode", upload.single("image"), (req, res) => {
   const image = req.file;
   if (!image) return res.status(400).send("Image required.");
@@ -79,7 +84,7 @@ app.post("/api/decode", upload.single("image"), (req, res) => {
   res.json({ message });
 });
 
-
+// Start server
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
